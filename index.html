@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun & Aesthetic Photo Booth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffebf2;
+            color: #5a189a;
+        }
+        .frame-border {
+            border-width: 15px;
+            border-style: solid;
+            border-radius: 15px;
+        }
+        .fun-title {
+            font-family: 'Pacifico', cursive;
+        }
+    </style>
+</head>
+<body class="text-center">
+
+
+    <section class="py-16 px-6">
+        <h2 class="text-4xl fun-title mb-6 text-purple-600">📷 Anjay Tes dulu anjir</h2>
+        <div class="flex flex-col items-center space-y-6">
+            <video id="camera" autoplay class="w-80 h-60 shadow-lg rounded-lg border-4 border-pink-400"></video>
+            <div class="flex space-x-4">
+                <label for="photoCount" class="font-medium">Number of Photos:</label>
+                <input type="number" id="photoCount" min="1" max="5" value="3" class="border border-pink-500 p-2 rounded bg-white text-pink-600 w-16">
+            </div>
+            <button id="startCapture" class="bg-pink-500 hover:bg-pink-600 px-6 py-3 rounded-lg font-bold text-white transition-transform transform hover:scale-105 shadow-md">Start Capture</button>
+            <canvas id="canvas" class="hidden w-80 h-60"></canvas>
+            <div id="photoStrip" class="mt-4 grid grid-cols-1 gap-4"></div>
+            <a id="downloadStrip" class="hidden bg-purple-500 hover:bg-purple-600 px-6 py-3 rounded-lg font-bold text-white transition-transform transform hover:scale-105 shadow-md" download="photobooth.png">Download Photo Strip</a>
+            <div class="mt-4">
+                <label for="frameColor" class="mr-2 font-medium">Choose Frame Color:</label>
+                <input type="color" id="frameColor" value="#ff69b4" class="border p-2 rounded">
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('canvas');
+        const startCaptureButton = document.getElementById('startCapture');
+        const photoCountInput = document.getElementById('photoCount');
+        const frameColorInput = document.getElementById('frameColor');
+        const photoStrip = document.getElementById('photoStrip');
+        const downloadButton = document.getElementById('downloadStrip');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error("Error accessing camera:", error);
+            });
+
+        startCaptureButton.addEventListener('click', () => {
+            const numPhotos = parseInt(photoCountInput.value);
+            let count = numPhotos;
+            photoStrip.innerHTML = '';
+            const images = [];
+            const frameColor = frameColorInput.value;
+
+            function takePhoto() {
+                if (count > 0) {
+                    setTimeout(() => {
+                        const context = canvas.getContext('2d');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        applyFrame(context, frameColor);
+                        const img = document.createElement('img');
+                        img.src = canvas.toDataURL();
+                        img.classList.add('w-32', 'frame-border');
+                        img.style.borderColor = frameColor;
+                        photoStrip.appendChild(img);
+                        images.push(img.src);
+                        count--;
+                        takePhoto();
+                    }, 3000);
+                } else {
+                    createPhotoStrip(images, frameColor);
+                }
+            }
+            takePhoto();
+        });
+
+        function applyFrame(context, color) {
+            context.lineWidth = 30;
+            context.strokeStyle = color;
+            context.strokeRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function createPhotoStrip(images, frameColor) {
+            const stripCanvas = document.createElement('canvas');
+            const stripContext = stripCanvas.getContext('2d');
+            const imgHeight = canvas.height;
+            const stripHeight = imgHeight * images.length + 80;
+            stripCanvas.width = canvas.width + 60;
+            stripCanvas.height = stripHeight;
+
+            stripContext.fillStyle = frameColor;
+            stripContext.fillRect(0, 0, stripCanvas.width, stripCanvas.height);
+
+            images.forEach((src, index) => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => {
+                    stripContext.drawImage(img, 30, index * imgHeight, canvas.width, imgHeight);
+                    if (index === images.length - 1) {
+                        stripContext.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                        stripContext.fillRect(0, stripCanvas.height - 50, stripCanvas.width, 50);
+                        stripContext.font = 'bold 20px Poppins';
+                        stripContext.fillStyle = '#fff';
+                        stripContext.textAlign = 'center';
+                        stripContext.fillText(new Date().toLocaleString(), stripCanvas.width / 2, stripCanvas.height - 20);
+                        downloadButton.href = stripCanvas.toDataURL();
+                        downloadButton.classList.remove('hidden');
+                    }
+                };
+            });
+        }
+    </script>
+</body>
+</html>
