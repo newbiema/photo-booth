@@ -20,13 +20,16 @@
         .fun-title {
             font-family: 'Pacifico', cursive;
         }
+        video {
+            transform: scaleX(-1);
+        }
     </style>
 </head>
 <body class="text-center">
 
 
     <section class="py-16 px-6">
-        <h2 class="text-4xl fun-title mb-6 text-purple-600">📷 Anjay Tes dulu anjir</h2>
+        <h2 class="text-4xl fun-title mb-6 text-purple-600">📷 Ini dibuat Oleh EVAN NI BOSSSSSS</h2>
         <div class="flex flex-col items-center space-y-6">
             <video id="camera" autoplay class="w-80 h-60 shadow-lg rounded-lg border-4 border-pink-400"></video>
             <div class="flex space-x-4">
@@ -37,11 +40,15 @@
             <canvas id="canvas" class="hidden w-80 h-60"></canvas>
             <div id="photoStrip" class="mt-4 grid grid-cols-1 gap-4"></div>
             <a id="downloadStrip" class="hidden bg-purple-500 hover:bg-purple-600 px-6 py-3 rounded-lg font-bold text-white transition-transform transform hover:scale-105 shadow-md" download="photobooth.png">Download Photo Strip</a>
+            
             <div class="mt-4">
                 <label for="frameColor" class="mr-2 font-medium">Choose Frame Color:</label>
                 <input type="color" id="frameColor" value="#ff69b4" class="border p-2 rounded">
             </div>
         </div>
+
+       
+        
     </section>
 
     <script>
@@ -52,6 +59,8 @@
         const frameColorInput = document.getElementById('frameColor');
         const photoStrip = document.getElementById('photoStrip');
         const downloadButton = document.getElementById('downloadStrip');
+        
+        
 
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
@@ -61,36 +70,39 @@
                 console.error("Error accessing camera:", error);
             });
 
-        startCaptureButton.addEventListener('click', () => {
-            const numPhotos = parseInt(photoCountInput.value);
-            let count = numPhotos;
-            photoStrip.innerHTML = '';
-            const images = [];
-            const frameColor = frameColorInput.value;
-
-            function takePhoto() {
-                if (count > 0) {
-                    setTimeout(() => {
-                        const context = canvas.getContext('2d');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        applyFrame(context, frameColor);
-                        const img = document.createElement('img');
-                        img.src = canvas.toDataURL();
-                        img.classList.add('w-32', 'frame-border');
-                        img.style.borderColor = frameColor;
-                        photoStrip.appendChild(img);
-                        images.push(img.src);
-                        count--;
-                        takePhoto();
-                    }, 3000);
-                } else {
-                    createPhotoStrip(images, frameColor);
+            startCaptureButton.addEventListener('click', () => {
+                const numPhotos = parseInt(photoCountInput.value);
+                let count = numPhotos;
+                photoStrip.innerHTML = '';
+                const images = [];
+                const frameColor = frameColorInput.value;
+        
+                function takePhoto() {
+                    if (count > 0) {
+                        setTimeout(() => {
+                            const context = canvas.getContext('2d');
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            context.save();
+                            context.scale(-1, 1);
+                            context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                            context.restore();
+                            applyFrame(context, frameColor);
+                            const img = document.createElement('img');
+                            img.src = canvas.toDataURL();
+                            img.classList.add('w-32', 'frame-border');
+                            img.style.borderColor = frameColor;
+                            photoStrip.appendChild(img);
+                            images.push(img.src);
+                            count--;
+                            takePhoto();
+                        }, 3000);
+                    } else {
+                        createPhotoStrip(images, frameColor);
+                    }
                 }
-            }
-            takePhoto();
-        });
+                takePhoto();
+            });
 
         function applyFrame(context, color) {
             context.lineWidth = 30;
